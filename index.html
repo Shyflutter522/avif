@@ -57,13 +57,21 @@
     });
 
     document.getElementById('translate-btn').addEventListener('click', () => {
-      const apiKey = 'TU_API_KEY'; // Aquí coloca tu clave de API de traducción
-      fetch(`https://api.deepl.com/v2/translate?auth_key=${apiKey}&text=${encodeURIComponent(extractedText)}&target_lang=ES`)
+      fetch(`https://libretranslate.com/translate`, {
+        method: 'POST',
+        body: JSON.stringify({
+          q: extractedText,
+          source: 'en',
+          target: 'es',
+          format: 'text'
+        }),
+        headers: { "Content-Type": "application/json" }
+      })
         .then(response => response.json())
         .then(data => {
-          translatedTextElement.textContent = data.translations[0].text;
+          translatedTextElement.textContent = data.translatedText;
         })
-        .catch(error => console.error(error));
+        .catch(error => console.error('Error en la traducción:', error));
     });
   </script>
 </body>
