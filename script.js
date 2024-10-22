@@ -1,69 +1,47 @@
-document.getElementById('dropZone').addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.target.classList.add('dragover');
-});
+document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
-document.getElementById('dropZone').addEventListener('dragleave', (e) => {
-    e.target.classList.remove('dragover');
-});
-
-document.getElementById('dropZone').addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.target.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && (file.type.startsWith('image/') || file.type === 'image/avif')) {
-        if (file.type === 'image/avif') {
-            convertAvifToPng(file).then(processImage);
-        } else {
-            processImage(file);
-        }
-    } else {
-        alert('Por favor, arrastra una imagen.');
-    }
-});
-
-function convertAvifToPng(file) {
-    return new Promise((resolve) => {
+function handleFile(event) {
+    const file = event.target.files[0];
+    if (file && file.type === 'image/avif') {
         const reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = function(e) {
             const img = new Image();
-            img.src = reader.result;
-            img.onload = function () {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                canvas.toBlob(function (blob) {
-                    resolve(blob);
-                }, 'image/png');
+            img.src = e.target.result;
+            img.onload = () => {
+                extractTextFromImage(img);
             };
         };
         reader.readAsDataURL(file);
+    } else {
+        alert('Por favor, selecciona una imagen .avif.');
+    }
+}
+
+function extractTextFromImage(image) {
+    Tesseract.recognize(
+        image,
+        'eng',
+        { logger: info => console.log(info) }
+    ).then(({ data: { text } }) => {
+        translateText(text);
     });
 }
 
-function processImage(imageFile) {
-    const reader = new FileReader();
-    reader.onload = function () {
-        Tesseract.recognize(reader.result, 'eng', { logger: m => console.log(m) })
-            .then(({ data: { text } }) => {
-                document.getElementById('translatedText').innerText = text;
-                translateText(text);
-            });
-    };
-    reader.readAsDataURL(imageFile);
-}
-
 function translateText(text) {
-    const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|es`;
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            const translatedText = data.responseData.translatedText;
-            document.getElementById('translatedText').innerText = `Texto traducido: ${translatedText}`;
-        })
-        .catch(error => {
-            console.error('Error al traducir:', error);
-        });
+    const url = 'https://api.libretranslate.com/translate';
+    fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({
+            q: text,
+            source: 'en',
+            target: 'es',
+            format: 'text'
+        }),
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('output').textContent = `Traducción: ${data.translatedText}`;
+    })
+    .catch(error => console.error('Error en la traducción:', error));
 }
