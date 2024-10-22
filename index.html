@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traductor de Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .drop-zone {
+            margin: 50px;
+            padding: 50px;
+            border: 2px dashed #cccccc;
+            color: #aaaaaa;
+        }
+        .drop-zone.dragover {
+            border-color: #000000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Arrastra una imagen para traducir el texto</h1>
+    <div class="drop-zone" id="dropZone">Arrastra tu imagen aquí</div>
+    <div id="translatedText"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
