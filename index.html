@@ -1,78 +1,55 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Traductor de Imágenes Inglés-Español</title>
-  <style>
-    #drop-area {
-      border: 2px dashed #ccc;
-      width: 100%;
-      padding: 50px;
-      text-align: center;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-  </style>
-</head>
-<body>
-  <h1>Traductor de Imágenes Inglés-Español</h1>
-  <div id="drop-area">
-    <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
-    <input type="file" id="file-input" accept="image/*">
-  </div>
-  <button id="translate-btn">Traducir</button>
-  <p>Texto extraído: <span id="extracted-text"></span></p>
-  <p>Texto traducido: <span id="translated-text"></span></p>
-  
-  <img id="uploaded-img" src="#" alt="Tu imagen aparecerá aquí" style="display:none;"/>
+<script>
+  const fileInput = document.getElementById('file-input');
+  const extractedTextElement = document.getElementById('extracted-text');
+  const translatedTextElement = document.getElementById('translated-text');
+  const uploadedImg = document.getElementById('uploaded-img');
+  let extractedText = '';
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1"></script>
-  <script>
-    const fileInput = document.getElementById('file-input');
-    const extractedTextElement = document.getElementById('extracted-text');
-    const translatedTextElement = document.getElementById('translated-text');
-    const uploadedImg = document.getElementById('uploaded-img');
-    let extractedText = '';
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedImg.src = event.target.result;
+        uploadedImg.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
 
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          uploadedImg.src = event.target.result;
-          uploadedImg.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-
-        Tesseract.recognize(file, 'eng')
-          .then(result => {
-            extractedText = result.data.text;
-            extractedTextElement.textContent = extractedText;
-          })
-          .catch(error => console.error(error));
-      }
-    });
-
-    document.getElementById('translate-btn').addEventListener('click', () => {
-      fetch(`https://libretranslate.com/translate`, {
-        method: 'POST',
-        body: JSON.stringify({
-          q: extractedText,
-          source: 'en',
-          target: 'es',
-          format: 'text'
-        }),
-        headers: { "Content-Type": "application/json" }
-      })
-        .then(response => response.json())
-        .then(data => {
-          translatedTextElement.textContent = data.translatedText;
+      Tesseract.recognize(file, 'eng')
+        .then(result => {
+          extractedText = result.data.text;
+          console.log("Texto extraído antes de limpiar:", extractedText);
+          
+          // Limpia el texto eliminando caracteres extraños
+          extractedText = extractedText.replace(/[^a-zA-Z0-9 .,'!?]/g, ''); // Mantener solo caracteres comunes
+          
+          console.log("Texto extraído después de limpiar:", extractedText);
+          extractedTextElement.textContent = extractedText;
         })
-        .catch(error => console.error('Error en la traducción:', error));
-    });
-  </script>
-</body>
-</html>
+        .catch(error => console.error(error));
+    }
+  });
+
+  document.getElementById('translate-btn').addEventListener('click', () => {
+    if (extractedText.trim() === '') {
+      alert('No se pudo extraer ningún texto válido.');
+      return;
+    }
+
+    fetch(`https://libretranslate.com/translate`, {
+      method: 'POST',
+      body: JSON.stringify({
+        q: extractedText,
+        source: 'en',
+        target: 'es',
+        format: 'text'
+      }),
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(response => response.json())
+      .then(data => {
+        translatedTextElement.textContent = data.translatedText;
+      })
+      .catch(error => console.error('Error en la traducción:', error));
+  });
+</script>
